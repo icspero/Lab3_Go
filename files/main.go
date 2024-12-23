@@ -1,11 +1,11 @@
-package main // Пакет main
+package main
 
 import (
-	"bufio"  // Ввод/Вывод
-	"fmt"    // Форматированный вывод
-	"os"     // Для открытия файлов и др.
-	"strings"
+	"bufio"
 	"encoding/binary"
+	"fmt"
+	"os"
+	"strings"
 )
 
 type SingleNode struct {
@@ -35,13 +35,13 @@ func (queue *Queue) QPUSH(cell string) {
 }
 
 func (queue *Queue) QPOP() {
-    if queue.head == nil {
-        return
-    }
-    queue.head = queue.head.next
-    if queue.head == nil {
-        queue.tail = nil
-    }
+	if queue.head == nil {
+		return
+	}
+	queue.head = queue.head.next
+	if queue.head == nil {
+		queue.tail = nil
+	}
 }
 
 func (queue *Queue) QREAD() {
@@ -60,7 +60,7 @@ func (queue *Queue) QREAD() {
 func (queue *Queue) WritingFromFileToStructure(filename string) {
 	file, err := os.Open(filename)
 	if err != nil {
-		fmt.Println("File opening error - ", err)
+		fmt.Println("Error opening file ", err)
 		return
 	}
 	defer file.Close()
@@ -78,7 +78,7 @@ func (queue *Queue) WritingFromFileToStructure(filename string) {
 func (queue *Queue) WritingFromStructureToFile(filename string) {
 	file, err := os.Create(filename)
 	if err != nil {
-		fmt.Println("File creation error - ", err)
+		fmt.Println("Error creatin file ", err)
 		return
 	}
 	defer file.Close()
@@ -87,14 +87,14 @@ func (queue *Queue) WritingFromStructureToFile(filename string) {
 	for current != nil {
 		_, err := fmt.Fprint(file, current.cell+" ")
 		if err != nil {
-			fmt.Println("File write error - ", err)
+			fmt.Println("Error writing file ", err)
 			return
 		}
 		current = current.next
 	}
 }
 
-func (queue *Queue)BinarySerialization(filename string) error {
+func (queue *Queue) BinarySerialization(filename string) error {
 
 	file, err := os.Create(filename)
 	if err != nil {
@@ -105,16 +105,14 @@ func (queue *Queue)BinarySerialization(filename string) error {
 	current := queue.head
 	for current != nil {
 		len := int32(len(current.cell))
-		if err := binary.Write(file, binary.LittleEndian, len); err != nil { 
+		if err := binary.Write(file, binary.LittleEndian, len); err != nil {
 			return err
 		}
-
 
 		_, err := file.Write([]byte(current.cell))
 		if err != nil {
 			return err
 		}
-
 
 		current = current.next
 	}
@@ -122,8 +120,7 @@ func (queue *Queue)BinarySerialization(filename string) error {
 	return nil
 }
 
-
-func (queue *Queue)BinaryDeserialization(filename string) ([]string, error) {
+func (queue *Queue) BinaryDeserialization(filename string) ([]string, error) {
 
 	file, err := os.Open(filename)
 	if err != nil {
@@ -143,7 +140,7 @@ func (queue *Queue)BinaryDeserialization(filename string) ([]string, error) {
 			return nil, err
 		}
 
-		buffer := make([]byte, len) // Выделение памяти
+		buffer := make([]byte, len)
 		_, err = file.Read(buffer)
 		if err != nil {
 			return nil, err
@@ -155,92 +152,77 @@ func (queue *Queue)BinaryDeserialization(filename string) ([]string, error) {
 
 	return result, nil
 }
-
-func main() {
-
-	scanner := bufio.NewScanner(os.Stdin)
-	queue := newQueue()
-	var filename string
-	for {
-		
-		fmt.Println()
-		fmt.Print("Enter command > ")
-		
-		scanner.Scan() 
-		command := scanner.Text()
-		parts := strings.Fields(command)
-		
-		if parts[0] == "exit" {
-			return
-		}
-		
-		if len(parts) > 1 {
-			filename = parts[1] + ".txt"
-		}
-
-		if _, err := os.Stat(filename); os.IsNotExist(err) {
-			fmt.Println("File doesn't exist!")
-			return
-		}
-
-
-		
-		fmt.Print("Select serialization:")
-		fmt.Println()
-		fmt.Print("1 - binary")
-		fmt.Println()
-		fmt.Print("2 - text")
-		fmt.Println()
-		fmt.Print(" > ")
-		scanner.Scan() 
-		serialization := scanner.Text()
-		
-		if serialization == "2" {
-		queue.WritingFromFileToStructure(filename)
-		} else {
-			queue.BinaryDeserialization(filename)
-		}
-		
-		switch parts[0] {
-
-		case "QPUSH":
-			if len(parts) == 3 {
-				queue.QPUSH(parts[2])
-				if serialization == "2" {
-					queue.WritingFromStructureToFile(filename)
-				} else {
-					queue.BinarySerialization(filename)
-				}
-				
-			} else {
-				fmt.Println("Incorrect input!")
-			}
-
-		case "QREAD":
-			if len(parts) == 2 {
-				queue.QREAD()
-			} else {
-				fmt.Println("Incorrect input!")
-			}
-
-		case "QPOP":
-			if len(parts) == 2 {
-				queue.QPOP()
-			} else {
-				fmt.Println("Incorrect input!")
-			}
-			
-			if serialization == "2" {
-					queue.WritingFromStructureToFile(filename)
-				} else {
-					queue.BinarySerialization(filename)
-				}
-			
-
-		default:
-			fmt.Println("Unknown command!")
-		}
-	}
-	
+func (q *Queue) Clear() {
+	q.head = nil
+	q.tail = nil
 }
 
+func main() {
+	scanner := bufio.NewScanner(os.Stdin)
+
+	queue := newQueue()
+	queue.Clear()
+
+	fmt.Println()
+	fmt.Print("Enter command: ")
+	scanner.Scan()
+	command := scanner.Text()
+	parts := strings.Fields(command)
+
+	if len(parts) == 0 {
+		return
+	}
+
+	if parts[0] == "exit" {
+		return
+	}
+
+	if len(parts) < 2 {
+		fmt.Println("Error: Missing filename!")
+		return
+	}
+
+	filename := parts[1]
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		fmt.Println("Error: File does not exist!")
+		return
+	}
+
+	if strings.HasSuffix(filename, ".txt") {
+		queue.WritingFromFileToStructure(filename)
+	} else if strings.HasSuffix(filename, ".bin") {
+		result, err := queue.BinaryDeserialization(filename)
+		if err != nil {
+			fmt.Println("Error:", err)
+		} else {
+			fmt.Println("Deserialized result:", result)
+		}
+	} else {
+		fmt.Println("Error: Unsupported file format!")
+		return
+	}
+
+	switch parts[0] {
+	case "QPUSH":
+		if len(parts) == 3 {
+			queue.QPUSH(parts[2])
+		} else {
+			fmt.Println("Error: Missing value to push!")
+		}
+	case "QPOP":
+		queue.QPOP()
+	case "QREAD":
+		queue.QREAD()
+	default:
+		fmt.Println("Error: Unknown command!")
+	}
+
+	if strings.HasSuffix(filename, ".txt") {
+		queue.WritingFromStructureToFile(filename)
+	} else if strings.HasSuffix(filename, ".bin") {
+		if err := queue.BinarySerialization(filename); err != nil {
+			fmt.Println("Error:", err)
+		}
+	}
+
+}
